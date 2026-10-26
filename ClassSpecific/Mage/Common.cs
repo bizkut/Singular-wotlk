@@ -73,7 +73,8 @@ namespace Singular.ClassSpecific.Mage
                             new Action(ctx => ((WoWGameObject)ctx).Interact()),
                             new WaitContinue(2, ctx => false, new ActionAlwaysSucceed())))),
 
-                new Decorator(ctx => SpellManager.CanCast("Ritual of Refreshment") && !Gotfood && ShouldSummonTable,
+                // Bag/settings checks before CanCast: CanCast asks the game (Lua) and this runs every tick.
+                new Decorator(ctx => !Gotfood && ShouldSummonTable && SpellManager.CanCast("Ritual of Refreshment"),
                     new Sequence(
                         new DecoratorContinue(ctx => StyxWoW.Me.IsMoving,
                             new Sequence(
@@ -86,7 +87,7 @@ namespace Singular.ClassSpecific.Mage
                 Spell.BuffSelf("Conjure Refreshment", ret => !Gotfood && !ShouldSummonTable),
                 // WotLK: Conjure Food for levels below 74 (before Conjure Refreshment)
                 new Decorator(
-                    ret => SpellManager.CanCast("Conjure Food") && !Gotfood && !SpellManager.HasSpell("Conjure Refreshment"),
+                    ret => !Gotfood && !SpellManager.HasSpell("Conjure Refreshment") && SpellManager.CanCast("Conjure Food"),
                     new Sequence(
                         new DecoratorContinue(ret => StyxWoW.Me.IsMoving,
                             new Sequence(
@@ -98,7 +99,7 @@ namespace Singular.ClassSpecific.Mage
                         new WaitContinue(2, ret => Gotfood, new ActionAlwaysSucceed()))),
                 // WotLK: Conjure Water for levels below 74 (before Conjure Refreshment)
                 new Decorator(
-                    ret => SpellManager.CanCast("Conjure Water") && !Gotwater && !SpellManager.HasSpell("Conjure Refreshment"),
+                    ret => !Gotwater && !SpellManager.HasSpell("Conjure Refreshment") && SpellManager.CanCast("Conjure Water"),
                     new Sequence(
                         new DecoratorContinue(ret => StyxWoW.Me.IsMoving,
                             new Sequence(
