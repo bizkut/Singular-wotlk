@@ -102,10 +102,14 @@ namespace Singular.Helpers
                             (StyxWoW.Me.HasAura("Food") && StyxWoW.Me.HealthPercent < 95) ||
                             (StyxWoW.Me.HasAura("Drink") && StyxWoW.Me.PowerType == WoWPowerType.Mana && StyxWoW.Me.ManaPercent < 95),
                             new ActionAlwaysSucceed()),
+                        // Underwater (swimming, or on the sea floor where the client clears the swimming flag
+                        // but the breath bar shows) nothing regenerates faster by standing still and the
+                        // breath runs out: only wait for health/mana on dry land.
                         new Decorator(
                             ret =>
                             ((StyxWoW.Me.PowerType == WoWPowerType.Mana && StyxWoW.Me.ManaPercent <= SingularSettings.Instance.MinMana) ||
-                            StyxWoW.Me.HealthPercent <= SingularSettings.Instance.MinHealth) && !StyxWoW.Me.CurrentMap.IsBattleground,
+                            StyxWoW.Me.HealthPercent <= SingularSettings.Instance.MinHealth) && !StyxWoW.Me.CurrentMap.IsBattleground &&
+                            !StyxWoW.Me.IsSwimming && !StyxWoW.Me.GetMirrorTimerInfo(MirrorTimerType.Breath).IsVisible,
                             new Sequence(
                                 new Action(ret => Logger.Write("We have no food/drink. Waiting to recover our health/mana back")),
                                 new WaitContinue(3, ret => StyxWoW.Me.Combat || (StyxWoW.Me.HealthPercent >= 85 && StyxWoW.Me.ManaPercent >= 85), new ActionAlwaysSucceed())))
