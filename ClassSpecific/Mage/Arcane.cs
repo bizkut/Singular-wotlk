@@ -64,13 +64,17 @@ namespace Singular.ClassSpecific.Mage
                     ret => StyxWoW.Me.ActiveAuras.ContainsKey("Ice Block"),
                     new ActionIdle()),
                 Spell.BuffSelf("Ice Block", ret => StyxWoW.Me.HealthPercent < 10 && !StyxWoW.Me.ActiveAuras.ContainsKey("Hypothermia")),
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 75),
+                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 50),
                 Spell.BuffSelf("Frost Nova", ret => Unit.NearbyUnfriendlyUnits.Any(u => u.DistanceSqr <= 8 * 8 && !u.HasAura("Frost Nova"))),
                 Common.CreateMagePolymorphOnAddBehavior(),
                 
-                // Burn mana phase (Only on multiple mobs while grinding. No need to dump mana off)
+                // Burn phase: on adds, and solo on a mob worth it (elite, or a fresh target) while mana is high.
+                // Arcane Power and Mirror Image are 2-3 minute cooldowns, idle otherwise while questing.
                 new Decorator(
-                    ret => StyxWoW.Me.ManaPercent > 20 && Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2,
+                    ret => StyxWoW.Me.ManaPercent > 20 &&
+                           (Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2 ||
+                            (StyxWoW.Me.ManaPercent > 60 && StyxWoW.Me.CurrentTarget != null &&
+                             (StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 80))),
                     new PrioritySelector(
                         Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
 
@@ -82,10 +86,12 @@ namespace Singular.ClassSpecific.Mage
 
                 // Reserve mana phase
 
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.ManaPercent < 30),
-                Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30 && (StyxWoW.Me.HasAura("Mana Shield") || !SpellManager.HasSpell("Mana Shield"))),
+                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.ManaPercent < 30 && StyxWoW.Me.HealthPercent < 70),
+                Spell.BuffSelf("Evocation", ret => StyxWoW.Me.ManaPercent < 30),
 
-                // WotLK: Arcane Missiles has no proc, use at 3+ Arcane Blast stacks for mana conservation
+                // Missile Barrage (talent proc): free, instant-speed Arcane Missiles
+                Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.ActiveAuras.ContainsKey("Missile Barrage")),
+                // Otherwise spend the 3 Arcane Blast stacks on Missiles to let the mana cost reset
                 Spell.Cast("Arcane Missiles", ret => StyxWoW.Me.HasAura("Arcane Blast", 3)),
                 Spell.Cast("Arcane Barrage", ret => StyxWoW.Me.HasAura("Arcane Blast", 3)),
 

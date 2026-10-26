@@ -205,7 +205,10 @@ namespace Singular.Managers
 
             if (treeOne == 0 && treeTwo == 0 && treeThree == 0)
             {
-                CurrentSpec = TalentSpec.Lowbie;
+                // A mage past 10 with no talent points still has Frostbolt, Ice Lance, Frost Nova,
+                // Ice Block and Evocation: the Frost rotation uses them (talent-only spells fail CanCast),
+                // Lowbie has no defensives or mana management at all.
+                CurrentSpec = myClass == WoWClass.Mage ? TalentSpec.FrostMage : TalentSpec.Lowbie;
                 return;
             }
 

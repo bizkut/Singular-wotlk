@@ -51,14 +51,13 @@ namespace Singular.ClassSpecific.Mage
                         Spell.BuffSelf("Mana Shield", ret => TalentManager.CurrentSpec != TalentSpec.ArcaneMage))),
                 // We may not have it, but if we do, it should be up 100% of the time.
                 Spell.BuffSelf("Ice Barrier"),
-                // Outside of BGs: armor priority - Molten > Mage > Ice Armor > Frost Armor
+                // Outside of BGs: best armor known. Arcane prefers Mage Armor (mana), the others Molten;
+                // either one falls back to the other while it is not learned yet (Mage Armor 34, Molten 62).
                 new Decorator(
                     ret => (SingularRoutine.CurrentWoWContext & WoWContext.Battlegrounds) == 0,
                     new PrioritySelector(
-                // Arcane is a mana whore, we want molten if we don't have mage yet. Otherwise, stick with Mage armor.
-                        Spell.BuffSelf("Molten Armor", ret => (TalentManager.CurrentSpec != TalentSpec.ArcaneMage || !SpellManager.HasSpell("Mage Armor"))),
-                        Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == TalentSpec.ArcaneMage),
-                // WotLK: Frost Armor / Ice Armor for low-level mages who don't have Molten or Mage Armor yet
+                        Spell.BuffSelf("Molten Armor", ret => TalentManager.CurrentSpec != TalentSpec.ArcaneMage || !SpellManager.HasSpell("Mage Armor")),
+                        Spell.BuffSelf("Mage Armor", ret => TalentManager.CurrentSpec == TalentSpec.ArcaneMage || !SpellManager.HasSpell("Molten Armor")),
                         Spell.BuffSelf("Ice Armor", ret => !SpellManager.HasSpell("Molten Armor") && !SpellManager.HasSpell("Mage Armor")),
                         Spell.BuffSelf("Frost Armor", ret => !SpellManager.HasSpell("Molten Armor") && !SpellManager.HasSpell("Mage Armor") && !SpellManager.HasSpell("Ice Armor")))),
 

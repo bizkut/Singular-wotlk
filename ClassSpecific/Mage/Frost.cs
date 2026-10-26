@@ -81,15 +81,23 @@ namespace Singular.ClassSpecific.Mage
                 // Cooldowns
                 Spell.BuffSelf("Evocation",
                     ret => StyxWoW.Me.ManaPercent < 30 || (TalentManager.HasGlyph("Evocation") && StyxWoW.Me.HealthPercent < 50)),
-                Spell.BuffSelf("Fire Ward", ret => StyxWoW.Me.HealthPercent <= 80),
-                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 60),
+                // Ice Barrier absorbs every school; Fire Ward only absorbed fire and cost a GCD on every melee mob.
+                Spell.BuffSelf("Ice Barrier", ret => StyxWoW.Me.HealthPercent <= 90),
+                Spell.BuffSelf("Mana Shield", ret => StyxWoW.Me.HealthPercent <= 60 && !StyxWoW.Me.HasAura("Ice Barrier")),
 
                 new Decorator(
-                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3,
-                    new PrioritySelector(
-                        Spell.BuffSelf("Mirror Image"),
-                        Spell.BuffSelf("Icy Veins")
-                        )),
+                    ret => Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 3 || StyxWoW.Me.HealthPercent < 50,
+                    Spell.BuffSelf("Mirror Image")),
+                // Icy Veins (3 min) is idle while questing unless used solo: on adds, elites, or a fresh target.
+                Spell.BuffSelf("Icy Veins",
+                    ret => StyxWoW.Me.CurrentTarget != null &&
+                           (Unit.NearbyUnfriendlyUnits.Count(u => u.IsTargetingMeOrPet) >= 2 ||
+                            StyxWoW.Me.CurrentTarget.Elite || StyxWoW.Me.CurrentTarget.HealthPercent > 80)),
+                // Cold Snap resets Ice Barrier, Frost Nova and Icy Veins when in trouble and they are all used up.
+                Spell.BuffSelf("Cold Snap",
+                    ret => StyxWoW.Me.HealthPercent < 40 &&
+                           Spell.GetSpellCooldown("Ice Barrier").TotalSeconds > 5 &&
+                           Spell.GetSpellCooldown("Frost Nova").TotalSeconds > 5),
                 Common.CreateUseManaGemBehavior(ret => StyxWoW.Me.ManaPercent < 80),
 
                 new Decorator(
